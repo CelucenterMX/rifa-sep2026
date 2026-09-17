@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Calificador — CeluCenter</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <div class="header__brand">
+        <span class="header__logo">⚖️</span>
+        <div>
+          <h1 class="header__title" id="juez-title">Calificador</h1>
+          <p class="header__sub" id="juez-sub">Cargando…</p>
+        </div>
+      </div>
+      <a href="index.html" class="btn btn--ghost" style="font-size:.78rem;">← Hub</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <div class="card__hd">
+        <h2 class="card__title">🎯 Equipos</h2>
+        <button class="btn btn--ghost-dk" id="btn-refresh" style="font-size:.78rem;">↺ Actualizar</button>
+      </div>
+      <div id="conn-bar" style="padding:.6rem 1.25rem;font-size:.8rem;color:var(--muted);border-bottom:1px solid var(--border);display:none;"></div>
+      <ul class="team-list" id="team-list" role="list"></ul>
+      <p class="empty" id="empty-state" hidden>Sin equipos registrados.<br/>Pídele al admin que los agregue.</p>
+    </section>
+  </div>
+
+  <!-- Scoring dialog -->
+  <dialog id="scoring-dialog" aria-modal="true">
+    <div class="dlg__hd">
+      <div>
+        <p class="dlg__team"    id="dlg-team"></p>
+        <p class="dlg__product" id="dlg-product"></p>
+      </div>
+      <button class="dlg__close" id="btn-close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="dlg__body" id="criteria-list"></div>
+    <div class="dlg__footer">
+      <div class="dlg__total-row">
+        <span class="dlg__total-lbl">Puntuación total</span>
+        <span class="dlg__total-val" id="total-val">0 / 25</span>
+      </div>
+      <div class="dlg__pct-wrap"><div class="dlg__pct-bar" id="pct-bar"></div></div>
+      <div class="dlg__actions">
+        <button class="btn btn--dng-ghost" id="btn-clear">↺ Limpiar</button>
+        <button class="btn btn--success"   id="btn-save" disabled>✓ Guardar calificación</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module">
+    import { gasCall }        from './js/gas.js';
+    import { JUECES, CRITERIA, MAX_STARS, MAX_SCORE } from './js/config.js';
+    import { criterionLabel } from './js/modules/scoring.js';
+
+    // ── Juez identity ─────────────────────────────────────────────────────────
+    const params    = new URLSearchParams(location.search);
+    const juezId    = params.get('id') ?? '1';
+    const juezInfo  = JUECES.find(j => j.id === juezId) ?? { id: juezId, nombre: `Juez ${juezId}` };
+    document.getElementById('juez-title').textContent = juezInfo.nombre;
+    document.getElementById('juez-sub').textContent   = `Tu panel de calificación`;
+    document.title = `${juezInfo.nombre} — Calificador`;
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    let equipos    = [];
+    let myScores   = {};   // equipo_id → { criterion: score }
+    let activeId   = null;
+    const pending  = {};   // criterion id → 0-5
+
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+    const listEl    = document.getElementById('team-list');
+    const emptyEl   = document.getElementById('empty-state');
+    const connBar   = document.getElementById('conn-bar');
+    const dialog    = document.getElementById('scoring-dialog');
+    const dlgTeam   = document.getElementById('dlg-team');
+    const dlgProd   = document.getElementById('dlg-product');
+    const criteriaEl= document.getElementById('criteria-list');
+    const totalValEl= document.getElementById('total-val');
+    const pctBarEl  = document.getElementById('pct-bar');
+    const saveBtnEl = document.getElementById('btn-save');
+
+    // ── Load ──────────────────────────────────────────────────────────────────
+    async function load() {
+      connBar.style.display = 'block';
+      connBar.textContent   = 'Cargando…';
+      try {
+        const [eqRes, scRes] = await Promise.all([
+          gasCall({ action: 'equipos' }),
+          gasCall({ action: 'my_scores', juez: juezId }),
+        ]);
+        equipos  = eqRes.equipos  ?? [];
+        myScores = scRes.scores   ?? {};
+        renderTeams();
+        connBar.style.display = 'none';
+      } catch {
+        connBar.textContent = '⚠️ Sin conexión — revisa el GAS URL en config.js';
+      }
+    }
+
+    // ── Render teams ──────────────────────────────────────────────────────────
+    function renderTeams() {
+      emptyEl.hidden = equipos.length > 0;
+      listEl.innerHTML = '';
+      for (const eq of equipos) {
+        const sc    = myScores[eq.id];
+        const rated = sc && CRITERIA.every(c => (sc[c.id] ?? 0) > 0);
+        const total = sc ? CRITERIA.reduce((s, c) => s + (sc[c.id] ?? 0), 0) : 0;
+        const li = document.createElement('li');
+        li.className = 'team-card';
+        li.innerHTML = `
+          <button class="team-card__body" data-id="${eq.id}" aria-label="Calificar ${esc(eq.nombre)}">
+            <span class="team-card__avatar">${eq.nombre.charAt(0).toUpperCase()}</span>
+            <div class="team-card__info">
+              <span class="team-card__name">${esc(eq.nombre)}</span>
+              <span class="team-card__product">📦 ${esc(eq.producto)}</span>
+            </div>
+            <div class="team-card__status">
+              ${rated
+                ? `<span class="score-chip">${total}<small>/${MAX_SCORE}</small></span>
+                   <span class="rated-badge">✓ Calificado</span>`
+                : `<span class="pending-badge">Sin calificar</span>`}
+            </div>
+          </button>
+        `;
+        listEl.appendChild(li);
+      }
+    }
+
+    // ── Open dialog ───────────────────────────────────────────────────────────
+    listEl.addEventListener('click', e => {
+      const btn = e.target.closest('[data-id]');
+      if (!btn) return;
+      const eq = equipos.find(t => t.id === btn.dataset.id);
+      if (!eq) return;
+      activeId = eq.id;
+
+      // Copy saved scores or zeros into pending
+      const saved = myScores[eq.id] ?? {};
+      CRITERIA.forEach(c => { pending[c.id] = saved[c.id] ?? 0; });
+
+      dlgTeam.textContent  = eq.nombre;
+      dlgProd.textContent  = `📦 ${eq.producto}`;
+      renderCriteria();
+      updateTotal();
+      dialog.showModal();
+    });
+
+    // ── Dialog ────────────────────────────────────────────────────────────────
+    document.getElementById('btn-close').addEventListener('click', () => dialog.close());
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      CRITERIA.forEach(c => { pending[c.id] = 0; });
+      renderCriteria();
+      updateTotal();
+    });
+    dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('cancel', e => e.preventDefault());
+
+    saveBtnEl.addEventListener('click', async () => {
+      if (!activeId) return;
+      saveBtnEl.disabled = true;
+      saveBtnEl.textContent = 'Guardando…';
+      try {
+        const params = { action: 'save', juez: juezId, equipo_id: activeId };
+        CRITERIA.forEach(c => { params[c.id] = pending[c.id]; });
+        await gasCall(params);
+        myScores[activeId] = { ...pending };
+        dialog.close();
+        renderTeams();
+      } catch {
+        alert('Error al guardar. Intenta de nuevo.');
+      }
+      saveBtnEl.disabled = false;
+      saveBtnEl.textContent = '✓ Guardar calificación';
+    });
+
+    // ── Criteria with stars ───────────────────────────────────────────────────
+    function renderCriteria() {
+      criteriaEl.innerHTML = '';
+      for (const c of CRITERIA) {
+        const div = document.createElement('div');
+        div.className = 'criterion';
+        div.innerHTML = `
+          <div class="criterion__header">
+            <span class="criterion__icon">${c.icon}</span>
+            <div class="criterion__text">
+              <span class="criterion__label">${c.label}</span>
+              <span class="criterion__desc">${c.desc}</span>
+            </div>
+            <span class="criterion__tag" id="ctag-${c.id}">${criterionLabel(pending[c.id])}</span>
+          </div>
+          <div class="stars" role="group" aria-label="${c.label}" data-cid="${c.id}">
+            ${starsHTML(pending[c.id], c.id)}
+          </div>
+        `;
+        criteriaEl.appendChild(div);
+      }
+      wireStars();
+    }
+
+    function starsHTML(value) {
+      return Array.from({ length: MAX_STARS }, (_, i) => {
+        const v = i + 1;
+        return `<button class="star ${v <= value ? 'star--on' : ''}" data-val="${v}" aria-label="${v} estrella${v>1?'s':''}">★</button>`;
+      }).join('');
+    }
+
+    function wireStars() {
+      criteriaEl.querySelectorAll('.stars').forEach(group => {
+        const cid = group.dataset.cid;
+        group.addEventListener('click', e => {
+          const btn = e.target.closest('[data-val]');
+          if (!btn) return;
+          const val = Number(btn.dataset.val);
+          pending[cid] = pending[cid] === val ? 0 : val;
+          refreshGroup(group, pending[cid]);
+          document.getElementById(`ctag-${cid}`).textContent = criterionLabel(pending[cid]);
+          updateTotal();
+        });
+        group.addEventListener('mouseover', e => {
+          const btn = e.target.closest('[data-val]');
+          if (btn) hoverGroup(group, Number(btn.dataset.val));
+        });
+        group.addEventListener('mouseleave', () => refreshGroup(group, pending[cid]));
+      });
+    }
+
+    function refreshGroup(group, value) {
+      group.querySelectorAll('.star').forEach(s => {
+        s.classList.toggle('star--on',    Number(s.dataset.val) <= value);
+        s.classList.toggle('star--hover', false);
+      });
+    }
+    function hoverGroup(group, v) {
+      group.querySelectorAll('.star').forEach(s => {
+        s.classList.toggle('star--hover', Number(s.dataset.val) <= v);
+        s.classList.toggle('star--on',    false);
+      });
+    }
+
+    function updateTotal() {
+      const total = CRITERIA.reduce((s, c) => s + (pending[c.id] ?? 0), 0);
+      const pct   = Math.round((total / MAX_SCORE) * 100);
+      totalValEl.textContent  = `${total} / ${MAX_SCORE}`;
+      pctBarEl.style.width    = `${pct}%`;
+      saveBtnEl.disabled      = CRITERIA.some(c => (pending[c.id] ?? 0) === 0);
+    }
+
+    document.getElementById('btn-refresh').addEventListener('click', load);
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    load();
+  </script>
+</body>
+</html>

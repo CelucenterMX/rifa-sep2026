@@ -1,4 +1,4 @@
-import { CRITERIA, MAX_SCORE, MAX_STARS } from './state.js';
+import { CRITERIA, MAX_SCORE, MAX_STARS } from '../config.js';
 
 export function totalScore(scores) {
   return CRITERIA.reduce((sum, c) => sum + (scores[c.id] ?? 0), 0);
@@ -28,10 +28,4 @@ export function overallLabel(pct) {
 
 export function medal(rank) {
   return ['🥇', '🥈', '🥉'][rank] ?? `#${rank + 1}`;
-}
-
-export function getLeaderboard(teams) {
-  return [...teams]
-    .filter(t => t.rated)
-    .sort((a, b) => totalScore(b.scores) - totalScore(a.scores));
 }

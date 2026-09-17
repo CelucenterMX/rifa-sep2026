@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Resultados en Vivo — CeluCenter</title>
+  <style>
+    :root {
+      --bg:     #0f0a1e;
+      --card:   #1a1030;
+      --border: #2d1f50;
+      --text:   #f0eaff;
+      --muted:  #8b7db5;
+      --primary:#a855f7;
+      --gold:   #f59e0b;
+      --silver: #94a3b8;
+      --bronze: #c2824a;
+      --green:  #10b981;
+      --star:   #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html  { font-size: 16px; }
+    body  { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(90deg, #1a0533, #3b0764 40%, #1a0533);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .header__brand { display: flex; align-items: center; gap: .75rem; }
+    .header__logo  { font-size: 1.8rem; }
+    .header__title { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .header__sub   { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+    .header__right { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; }
+
+    .live-pill {
+      display: flex; align-items: center; gap: .4rem;
+      background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.4);
+      color: #f87171; padding: .3rem .7rem; border-radius: 99px; font-size: .72rem; font-weight: 700;
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+    .timer { font-size: .72rem; color: var(--muted); }
+
+    .btn-hub {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: .4rem .85rem; border-radius: 8px; cursor: pointer; font-size: .75rem;
+      text-decoration: none; transition: all .15s;
+    }
+    .btn-hub:hover { border-color: var(--primary); color: var(--text); }
+
+    /* ── Wrap ───────────────────────────────────────────────── */
+    .wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+    /* ── Judge legend ───────────────────────────────────────── */
+    .judge-legend {
+      display: flex; flex-wrap: wrap; gap: .5rem .9rem;
+      margin-bottom: 1.25rem;
+    }
+    .judge-pill {
+      display: flex; align-items: center; gap: .35rem;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 99px; padding: .25rem .65rem; font-size: .75rem; font-weight: 600;
+    }
+    .judge-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    /* ── Leaderboard ────────────────────────────────────────── */
+    .lb { display: flex; flex-direction: column; gap: .75rem; }
+
+    .lb-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.1rem 1.25rem;
+      display: flex; align-items: center; gap: 1.1rem;
+      transition: transform .2s, border-color .3s;
+      position: relative; overflow: hidden;
+    }
+    .lb-card::before {
+      content: ''; position: absolute; inset: 0; opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
+    .lb-card--1 { border-color: rgba(245,158,11,.45); }
+    .lb-card--1::before { background: radial-gradient(circle at 0% 50%, rgba(245,158,11,.08), transparent 70%); opacity: 1; }
+    .lb-card--2 { border-color: rgba(148,163,184,.35); }
+    .lb-card--2::before { background: radial-gradient(circle at 0% 50%, rgba(148,163,184,.07), transparent 70%); opacity: 1; }
+    .lb-card--3 { border-color: rgba(194,130,74,.35); }
+    .lb-card--3::before { background: radial-gradient(circle at 0% 50%, rgba(194,130,74,.06), transparent 70%); opacity: 1; }
+
+    .lb-rank { font-size: 2.2rem; line-height: 1; flex-shrink: 0; min-width: 2.8rem; text-align: center; }
+    .lb-info { flex: 1; min-width: 0; }
+    .lb-name { font-size: 1.05rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-product { font-size: .76rem; color: var(--muted); margin-top: .1rem; }
+
+    .lb-criteria {
+      display: flex; flex-wrap: wrap; gap: .35rem .65rem; margin-top: .55rem;
+    }
+    .lb-crit {
+      display: flex; align-items: center; gap: .2rem;
+      font-size: .75rem; color: var(--muted);
+    }
+    .lb-crit .val { font-weight: 700; color: var(--text); }
+
+    /* Judge dots inside card */
+    .lb-judges {
+      display: flex; gap: .25rem; margin-top: .4rem; flex-wrap: wrap;
+    }
+    .jdot {
+      font-size: .68rem; font-weight: 700;
+      padding: .15rem .45rem; border-radius: 99px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--muted);
+      transition: all .3s;
+    }
+    .jdot--rated { color: #fff; border-color: transparent; }
+
+    .lb-score-block {
+      display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; flex-shrink: 0;
+    }
+    .lb-total {
+      font-size: 2.2rem; font-weight: 900; line-height: 1;
+      background: linear-gradient(135deg, #a855f7, #f59e0b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .lb-total--gray { background: var(--muted); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .lb-max { font-size: .7rem; color: var(--muted); margin-top: -.3rem; text-align: right; }
+    .lb-pct-wrap { width: 90px; height: 5px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
+    .lb-pct-bar  { height: 100%; background: linear-gradient(90deg, var(--primary), #f59e0b); border-radius: 99px; transition: width .6s ease; }
+    .badge {
+      font-size: .65rem; font-weight: 700; padding: .18rem .5rem; border-radius: 99px; white-space: nowrap;
+    }
+    .badge--gold   { background: rgba(245,158,11,.2); color: #fbbf24; border: 1px solid rgba(245,158,11,.4); }
+    .badge--green  { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+    .badge--blue   { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .badge--yellow { background: rgba(234,179,8,.15);  color: #facc15; border: 1px solid rgba(234,179,8,.3); }
+    .badge--red    { background: rgba(239,68,68,.1);   color: #f87171; border: 1px solid rgba(239,68,68,.2); }
+
+    /* ── Empty / waiting states ─────────────────────────────── */
+    .waiting {
+      text-align: center; color: var(--muted);
+      padding: 4rem 1rem;
+    }
+    .waiting__icon { font-size: 3rem; margin-bottom: 1rem; }
+    .waiting__title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .waiting__sub { font-size: .85rem; margin-top: .35rem; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 520px) {
+      .lb-criteria { display: none; }
+      .lb-total { font-size: 1.7rem; }
+      .lb-rank  { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header__brand">
+      <span class="header__logo">🏆</span>
+      <div>
+        <div class="header__title">Resultados en Vivo</div>
+        <div class="header__sub">Calificador de Videos — CeluCenter</div>
+      </div>
+    </div>
+    <div class="header__right">
+      <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+      <span class="timer" id="timer">Actualizando…</span>
+      <a href="index.html" class="btn-hub">← Hub</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="judge-legend" id="judge-legend"></div>
+    <div class="lb" id="leaderboard"></div>
+    <div class="waiting" id="waiting" hidden>
+      <div class="waiting__icon">⏳</div>
+      <div class="waiting__title">Esperando calificaciones…</div>
+      <div class="waiting__sub">Los resultados aparecerán aquí en cuanto los jueces empiecen a calificar.</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { gasCall }          from './js/gas.js';
+    import { JUECES, CRITERIA, MAX_SCORE } from './js/config.js';
+
+    const lbEl     = document.getElementById('leaderboard');
+    const waitEl   = document.getElementById('waiting');
+    const timerEl  = document.getElementById('timer');
+    const legendEl = document.getElementById('judge-legend');
+
+    // ── Judge colors ──────────────────────────────────────────────────────────
+    const JUDGE_COLORS = ['#a855f7','#f59e0b','#10b981','#38bdf8'];
+
+    // ── Legend ────────────────────────────────────────────────────────────────
+    JUECES.forEach((j, i) => {
+      const pill = document.createElement('div');
+      pill.className = 'judge-pill';
+      pill.innerHTML = `<span class="judge-dot" style="background:${JUDGE_COLORS[i]};"></span>${j.nombre}`;
+      legendEl.appendChild(pill);
+    });
+
+    // ── Polling ───────────────────────────────────────────────────────────────
+    const INTERVAL = 4000;
+    let countdown  = INTERVAL / 1000;
+
+    async function fetchAndRender() {
+      try {
+        const data = await gasCall({ action: 'resultados' });
+        render(data);
+      } catch {
+        timerEl.textContent = '⚠️ Sin conexión';
+      }
+    }
+
+    function startTimer() {
+      countdown = INTERVAL / 1000;
+      const tick = setInterval(() => {
+        countdown--;
+        timerEl.textContent = countdown > 0 ? `↺ en ${countdown}s` : 'Actualizando…';
+        if (countdown <= 0) {
+          clearInterval(tick);
+          fetchAndRender().then(startTimer);
+        }
+      }, 1000);
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function render(data) {
+      const results = data.results ?? [];
+      const jueces  = data.jueces  ?? {};
+
+      const anyRated = results.some(r => r.judges_rated > 0);
+      waitEl.hidden   = anyRated || results.length === 0;
+      lbEl.hidden     = !anyRated;
+
+      if (!anyRated) {
+        if (results.length === 0) {
+          waitEl.querySelector('.waiting__sub').textContent = 'Aún no hay equipos registrados. Pídele al admin que los agregue.';
+        }
+        return;
+      }
+
+      lbEl.innerHTML = '';
+
+      results.forEach((team, i) => {
+        const pct   = Math.round((team.total_avg / MAX_SCORE) * 100);
+        const rankN = i + 1;
+        const medal = rankN === 1 ? '🥇' : rankN === 2 ? '🥈' : rankN === 3 ? '🥉' : `#${rankN}`;
+        const lbl   = overallLabel(pct);
+
+        const card = document.createElement('div');
+        card.className = `lb-card lb-card--${rankN <= 3 ? rankN : 'x'}`;
+        card.innerHTML = `
+          <div class="lb-rank">${medal}</div>
+          <div class="lb-info">
+            <div class="lb-name">${esc(team.nombre)}</div>
+            <div class="lb-product">📦 ${esc(team.producto)}</div>
+            <div class="lb-criteria">
+              ${CRITERIA.map(c => {
+                const avg = team.avg_scores[c.id] ?? 0;
+                return `<span class="lb-crit">${c.icon} <span class="val">${avg > 0 ? avg.toFixed(1) : '—'}</span></span>`;
+              }).join('')}
+            </div>
+            <div class="lb-judges">
+              ${JUECES.map((j, ji) => {
+                const rated = team.by_juez && team.by_juez[j.id];
+                return `<span class="jdot ${rated ? 'jdot--rated' : ''}"
+                  style="${rated ? `background:${JUDGE_COLORS[ji]}22;border-color:${JUDGE_COLORS[ji]};color:${JUDGE_COLORS[ji]};` : ''}"
+                  title="${j.nombre}">
+                  ${rated ? '✓' : '·'} ${j.nombre}
+                </span>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="lb-score-block">
+            <div class="lb-total ${team.judges_rated === 0 ? 'lb-total--gray' : ''}">${team.total_avg > 0 ? team.total_avg.toFixed(1) : '—'}</div>
+            <div class="lb-max">de ${MAX_SCORE} pts</div>
+            <span class="badge ${lbl.cls}">${lbl.text}</span>
+            <div class="lb-pct-wrap"><div class="lb-pct-bar" style="width:${pct}%"></div></div>
+          </div>
+        `;
+        lbEl.appendChild(card);
+      });
+    }
+
+    function overallLabel(pct) {
+      if (pct >= 90) return { text: 'Sobresaliente 🌟', cls: 'badge--gold' };
+      if (pct >= 70) return { text: 'Excelente 🎉',     cls: 'badge--green' };
+      if (pct >= 50) return { text: 'Muy Bien 👍',       cls: 'badge--blue' };
+      if (pct >= 30) return { text: 'Bien 😊',           cls: 'badge--yellow' };
+      return         { text: 'En proceso…',              cls: 'badge--red' };
+    }
+
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    fetchAndRender().then(startTimer);
+  </script>
+</body>
+</html>

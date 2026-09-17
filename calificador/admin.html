@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin — Calificador CeluCenter</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <div class="header__brand">
+        <span class="header__logo">🗂️</span>
+        <div>
+          <h1 class="header__title">Administrar Equipos</h1>
+          <p class="header__sub">Calificador — CeluCenter</p>
+        </div>
+      </div>
+      <a href="index.html" class="btn btn--ghost">← Hub</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <div class="card__hd">
+        <h2 class="card__title">➕ Agregar equipo</h2>
+      </div>
+      <form class="add-form" id="add-form" style="display:flex;">
+        <div class="add-form__field">
+          <label for="inp-nombre">Nombre del equipo</label>
+          <input type="text" class="input" id="inp-nombre" placeholder="Ej. Los Cargadores" maxlength="40" required/>
+        </div>
+        <div class="add-form__field">
+          <label for="inp-prod">Producto a promocionar</label>
+          <input type="text" class="input" id="inp-prod" placeholder="Ej. Audífonos Bluetooth" maxlength="50" required/>
+        </div>
+        <div class="add-form__btns">
+          <button type="submit" class="btn btn--primary" id="btn-add">Agregar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card__hd">
+        <h2 class="card__title">🎯 Equipos registrados</h2>
+        <button class="btn btn--ghost-dk" id="btn-refresh" style="font-size:.78rem;">↺ Actualizar</button>
+      </div>
+      <div id="status-bar" style="padding:.65rem 1.25rem;font-size:.8rem;color:var(--muted);border-bottom:1px solid var(--border);display:none;"></div>
+      <ul class="team-list" id="team-list" role="list"></ul>
+      <p class="empty" id="empty" hidden>Sin equipos aún. Agrega el primero arriba.</p>
+    </section>
+  </div>
+
+  <script type="module">
+    import { gasCall } from './js/gas.js';
+    import { JUECES }  from './js/config.js';
+
+    const listEl   = document.getElementById('team-list');
+    const emptyEl  = document.getElementById('empty');
+    const statusEl = document.getElementById('status-bar');
+    const form     = document.getElementById('add-form');
+    const btnAdd   = document.getElementById('btn-add');
+    const btnRef   = document.getElementById('btn-refresh');
+
+    // ── Load ──────────────────────────────────────────────────────────────────
+    async function load() {
+      setStatus('Cargando…');
+      try {
+        const [eqRes, resRes] = await Promise.all([
+          gasCall({ action: 'equipos' }),
+          gasCall({ action: 'resultados' }),
+        ]);
+        render(eqRes.equipos ?? [], resRes.results ?? []);
+        setStatus('');
+      } catch {
+        setStatus('Error de conexión — revisa el GAS URL en config.js');
+      }
+    }
+
+    function setStatus(msg) {
+      statusEl.hidden = !msg;
+      statusEl.style.display = msg ? 'block' : 'none';
+      statusEl.textContent = msg;
+    }
+
+    function render(equipos, results) {
+      emptyEl.hidden = equipos.length > 0;
+      listEl.innerHTML = '';
+      // Build rated map from results
+      const ratedMap = {};
+      for (const r of results) ratedMap[r.id] = r.judges_rated;
+
+      for (const eq of equipos) {
+        const rated = ratedMap[eq.id] ?? 0;
+        const li = document.createElement('li');
+        li.className = 'team-card';
+        li.innerHTML = `
+          <div class="team-card__body" style="cursor:default;">
+            <span class="team-card__avatar">${eq.nombre.charAt(0).toUpperCase()}</span>
+            <div class="team-card__info">
+              <span class="team-card__name">${esc(eq.nombre)}</span>
+              <span class="team-card__product">📦 ${esc(eq.producto)}</span>
+            </div>
+            <div class="team-card__status">
+              <span class="${rated === JUECES.length ? 'rated-badge' : 'pending-badge'}">
+                ${rated}/${JUECES.length} jueces
+              </span>
+              ${judgesDots(eq.id, results)}
+            </div>
+          </div>
+          <button class="team-card__del" data-id="${eq.id}" data-name="${esc(eq.nombre)}" aria-label="Eliminar">✕</button>
+        `;
+        listEl.appendChild(li);
+      }
+    }
+
+    function judgesDots(equipoId, results) {
+      const found = results.find(r => r.id === equipoId);
+      return JUECES.map(j => {
+        const rated = found && found.by_juez && found.by_juez[j.id];
+        return `<span title="${j.nombre}" style="font-size:.7rem;">${rated ? '✅' : '⬜'}</span>`;
+      }).join('');
+    }
+
+    // ── Add team ──────────────────────────────────────────────────────────────
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const nombre  = document.getElementById('inp-nombre').value.trim();
+      const producto = document.getElementById('inp-prod').value.trim();
+      if (!nombre || !producto) return;
+      btnAdd.disabled = true;
+      btnAdd.textContent = 'Agregando…';
+      try {
+        await gasCall({ action: 'add', nombre, producto });
+        form.reset();
+        await load();
+      } catch {
+        alert('Error al agregar. Revisa la conexión.');
+      }
+      btnAdd.disabled = false;
+      btnAdd.textContent = 'Agregar';
+    });
+
+    // ── Delete ────────────────────────────────────────────────────────────────
+    listEl.addEventListener('click', async e => {
+      const btn = e.target.closest('[data-id]');
+      if (!btn) return;
+      if (!confirm(`¿Eliminar "${btn.dataset.name}" y todas sus calificaciones?`)) return;
+      btn.disabled = true;
+      try {
+        await gasCall({ action: 'del', id: btn.dataset.id });
+        await load();
+      } catch {
+        alert('Error al eliminar.');
+        btn.disabled = false;
+      }
+    });
+
+    btnRef.addEventListener('click', load);
+
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,99 +1,108 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calificador de Videos — CeluCenter</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Calificador — CeluCenter</title>
+  <style>
+    :root{--primary:#7c3aed;--primary-h:#6d28d9;--bg:#f5f3ff;--surface:#fff;--border:#e5e7eb;--text:#1f2937;--muted:#6b7280;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;}
+    .header{background:linear-gradient(135deg,#3b0764,#7c3aed 60%,#a855f7);color:#fff;padding:1.5rem;text-align:center;}
+    .header__logo{font-size:2.5rem;line-height:1;margin-bottom:.5rem;}
+    .header h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;}
+    .header p{font-size:.85rem;opacity:.8;margin-top:.25rem;}
+    .wrap{max-width:640px;margin:0 auto;padding:2rem 1rem;}
+    h2{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.75rem;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1.5rem;}
+    @media(max-width:420px){.grid{grid-template-columns:1fr;}}
+    .card{background:var(--surface);border-radius:14px;padding:1.25rem 1rem;text-decoration:none;color:var(--text);border:2px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;transition:all .15s;cursor:pointer;}
+    .card:hover{border-color:var(--primary);box-shadow:0 4px 14px rgba(124,58,237,.18);transform:translateY(-2px);}
+    .card--results{grid-column:1/-1;flex-direction:row;justify-content:center;gap:.75rem;background:linear-gradient(135deg,#3b0764,#7c3aed);color:#fff;border-color:transparent;}
+    .card--results:hover{box-shadow:0 6px 20px rgba(124,58,237,.35);}
+    .card--admin{border-style:dashed;}
+    .card__icon{font-size:2rem;line-height:1;}
+    .card__label{font-weight:700;font-size:.95rem;}
+    .card__sub{font-size:.75rem;color:var(--muted);}
+    .card--results .card__sub{color:rgba(255,255,255,.7);}
+    .card--results .card__icon{font-size:2.5rem;}
+    .badge-live{background:#ef4444;color:#fff;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:99px;animation:pulse 1.5s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+    .divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0;}
+    .url-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;font-size:.78rem;color:var(--muted);line-height:1.7;}
+    .url-block strong{color:var(--text);font-size:.82rem;}
+    .url-block code{background:#f3f4f6;padding:.1rem .35rem;border-radius:4px;font-size:.75rem;color:var(--primary);font-family:monospace;}
+  </style>
 </head>
 <body>
-
-  <!-- ── Header ─────────────────────────────────────────────────────── -->
-  <header class="header">
-    <div class="header__inner">
-      <div class="header__brand">
-        <span class="header__logo">📱</span>
-        <div>
-          <h1 class="header__title">Calificador de Videos</h1>
-          <p class="header__sub">Dinámica de equipos — CeluCenter</p>
-        </div>
-      </div>
-      <button class="btn btn--ghost" id="btn-reset-all">🗑️ Reiniciar</button>
-    </div>
-  </header>
+  <div class="header">
+    <div class="header__logo">📱</div>
+    <h1>Calificador de Videos</h1>
+    <p>Dinámica de equipos — CeluCenter</p>
+  </div>
 
   <div class="wrap">
 
-    <!-- ── Equipos ───────────────────────────────────────────────────── -->
-    <section class="card">
-      <div class="card__hd">
-        <h2 class="card__title">🎯 Equipos</h2>
-        <button class="btn btn--primary" id="btn-add-team">+ Agregar equipo</button>
-      </div>
-
-      <form class="add-form" id="add-team-form" hidden>
-        <div class="add-form__field">
-          <label for="team-name-input">Nombre del equipo</label>
-          <input type="text" class="input" id="team-name-input"
-                 placeholder="Ej. Los Cargadores" maxlength="40" required />
+    <h2>📺 Pantalla principal</h2>
+    <div class="grid">
+      <a href="resultados.html" class="card card--results">
+        <span class="card__icon">🏆</span>
+        <div>
+          <div class="card__label">Resultados en vivo</div>
+          <div class="card__sub">Proyectar en pantalla grande &nbsp;<span class="badge-live">LIVE</span></div>
         </div>
-        <div class="add-form__field">
-          <label for="product-input">Producto a promocionar</label>
-          <input type="text" class="input" id="product-input"
-                 placeholder="Ej. Audífonos Bluetooth" maxlength="50" required />
-        </div>
-        <div class="add-form__btns">
-          <button type="submit" class="btn btn--primary">Agregar</button>
-          <button type="button" class="btn btn--ghost-dk" id="btn-cancel-add">Cancelar</button>
-        </div>
-      </form>
-
-      <ul class="team-list" id="team-list" role="list" aria-label="Lista de equipos"></ul>
-      <p class="empty" id="empty-state" hidden>
-        Sin equipos aún.<br/>Agrega el primero para comenzar.
-      </p>
-    </section>
-
-    <!-- ── Clasificación ─────────────────────────────────────────────── -->
-    <section class="card">
-      <div class="card__hd">
-        <h2 class="card__title">🏆 Clasificación</h2>
-      </div>
-      <div id="leaderboard" role="list"></div>
-      <p class="empty" id="lb-empty">Los equipos calificados aparecerán aquí.</p>
-    </section>
-
-  </div><!-- /wrap -->
-
-  <!-- ── Scoring dialog ────────────────────────────────────────────── -->
-  <dialog id="scoring-dialog" aria-modal="true" aria-labelledby="dialog-team-name">
-    <div class="dlg__hd">
-      <div>
-        <p class="dlg__team"    id="dialog-team-name"></p>
-        <p class="dlg__product" id="dialog-product"></p>
-      </div>
-      <button class="dlg__close" id="btn-close-dialog" aria-label="Cerrar">✕</button>
+      </a>
     </div>
 
-    <div class="dlg__body" id="criteria-list">
-      <!-- rendered by ui.js -->
+    <h2>⚖️ Jueces</h2>
+    <div class="grid" id="judges-grid"></div>
+
+    <h2>⚙️ Administración</h2>
+    <div class="grid">
+      <a href="admin.html" class="card card--admin">
+        <span class="card__icon">🗂️</span>
+        <div class="card__label">Administrar equipos</div>
+        <div class="card__sub">Agregar / eliminar equipos</div>
+      </a>
     </div>
 
-    <div class="dlg__footer">
-      <div class="dlg__total-row">
-        <span class="dlg__total-lbl">Puntuación total</span>
-        <span class="dlg__total-val" id="total-score-value">0 / 25</span>
-      </div>
-      <div class="dlg__pct-wrap">
-        <div class="dlg__pct-bar" id="pct-bar"></div>
-      </div>
-      <div class="dlg__actions">
-        <button class="btn btn--dng-ghost" id="btn-reset-scores">↺ Limpiar</button>
-        <button class="btn btn--success"   id="btn-save" disabled>✓ Guardar calificación</button>
-      </div>
+    <hr class="divider"/>
+    <div class="url-block">
+      <strong>Links para compartir</strong><br/>
+      Juez 1: <code id="url1"></code><br/>
+      Juez 2: <code id="url2"></code><br/>
+      Juez 3: <code id="url3"></code><br/>
+      Juez 4: <code id="url4"></code><br/>
+      Resultados: <code id="urlr"></code>
     </div>
-  </dialog>
 
-  <script type="module" src="js/main.js"></script>
+  </div>
+
+  <script type="module">
+    import { JUECES } from './js/config.js';
+
+    const base = location.href.replace('index.html','').replace(/\/$/, '');
+
+    const grid = document.getElementById('judges-grid');
+    JUECES.forEach(j => {
+      const url = `${base}/juez.html?id=${j.id}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.className = 'card';
+      a.innerHTML = `
+        <span class="card__icon">👤</span>
+        <div class="card__label">${j.nombre}</div>
+        <div class="card__sub">Abrir calificador</div>`;
+      grid.appendChild(a);
+    });
+
+    // Show shareable URLs
+    const origin = location.origin + location.pathname.replace('index.html','').replace(/\/$/, '') + '/';
+    document.getElementById('url1').textContent = origin + 'juez.html?id=1';
+    document.getElementById('url2').textContent = origin + 'juez.html?id=2';
+    document.getElementById('url3').textContent = origin + 'juez.html?id=3';
+    document.getElementById('url4').textContent = origin + 'juez.html?id=4';
+    document.getElementById('urlr').textContent = origin + 'resultados.html';
+  </script>
 </body>
 </html>
