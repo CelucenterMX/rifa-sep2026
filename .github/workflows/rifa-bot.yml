@@ -116,9 +116,14 @@ jobs:
                 f"¡Hola {nombre}! 🎟️\n\n"
                 f"Gracias por confirmar. Aquí está el link de registro de la rifa de septiembre:\n\n"
                 f"👉 {RIFA_LINK}\n\n"
-                f"Entra y busca TU nombre para ver los números de boleto que te tocaron. "
-                f"Comparte este link con tus compañeros y apoyos de tienda para que también puedan ver sus boletos.\n\n"
-                f"⚠️ Cada quien debe buscar su propio nombre — si por error eligieron el nombre de otra persona, avísanos y lo corregimos.\n\n"
+                f"Entra y busca TU nombre para ver los números de boleto que te tocaron.\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"📢 IMPORTANTE — Comparte este link con tu equipo:\n"
+                f"Por favor reenvía este link a tus compañeros y apoyos de tienda para que cada uno pueda ver sus boletos. "
+                f"Ellos también deben entrar y buscar su propio nombre.\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"⚠️ Recuerda: cada quien debe elegir su propio nombre en la página, no el de otra persona. "
+                f"Si alguien elige el nombre equivocado, avísanos y lo corregimos.\n\n"
                 f"¡Mucha suerte en el sorteo! 🎉"
               )
               api(KREIS, 'im.message.add', {'DIALOG_ID': author_id, 'MESSAGE': msg}, post=True)
