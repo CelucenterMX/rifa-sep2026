@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rifa CeluCenter — Septiembre 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #111; min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: #fff; border-bottom: 3px solid #2aabd2; padding: 14px 20px; text-align: center; }
+  .header img { height: 44px; margin-bottom: 6px; }
+  .header h1 { color: #111; font-size: 1.2rem; font-weight: 800; }
+  .header p  { color: #2aabd2; font-size: 0.85rem; margin-top: 2px; font-weight: 600; }
+
+  /* REGISTRO */
+  #page-registro { padding: 24px 20px; max-width: 480px; margin: 0 auto; }
+  #page-registro h2 { font-size: 1.1rem; margin-bottom: 16px; color: #2aabd2; }
+  .search-box { width: 100%; padding: 14px 16px; font-size: 1rem; border-radius: 12px;
+                border: 2px solid #dde3ea; background: #fff; color: #111; outline: none; }
+  .search-box:focus { border-color: #2aabd2; }
+  .results { margin-top: 12px; }
+  .result-item { background: #fff; border: 1px solid #dde3ea; border-radius: 12px;
+                 padding: 14px 16px; margin-bottom: 10px; cursor: pointer;
+                 transition: border-color .2s, box-shadow .2s; }
+  .result-item:hover { border-color: #2aabd2; box-shadow: 0 2px 8px rgba(42,171,210,0.15); }
+  .result-item .rname { font-weight: 700; font-size: 1rem; color: #111; }
+  .result-item .rcount { color: #888; font-size: 0.85rem; margin-top: 2px; }
+  .no-results { color: #888; text-align: center; padding: 20px; }
+
+  /* TICKET CARD */
+  #page-ticket { display: none; padding: 24px 20px; max-width: 480px; margin: 0 auto; text-align: center; }
+  .ticket-card { background: #fff; border: 2px solid #2aabd2; border-radius: 20px; padding: 28px 20px;
+                 box-shadow: 0 4px 16px rgba(42,171,210,0.12); }
+  .ticket-card .tc-name { font-size: 1.2rem; font-weight: 800; color: #2aabd2; margin-bottom: 6px; }
+  .ticket-card .tc-sub  { color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+  .boletos-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 16px 0; }
+  .boleto-num { background: #2aabd2; color: #fff; font-weight: 900; font-size: 1.1rem;
+                width: 52px; height: 52px; border-radius: 50%; display: flex;
+                align-items: center; justify-content: center; }
+  .btn-volver { margin-top: 20px; background: transparent; border: 1px solid #ccc;
+                color: #888; padding: 10px 24px; border-radius: 20px; cursor: pointer;
+                font-size: 0.9rem; }
+  .btn-volver:hover { border-color: #2aabd2; color: #2aabd2; }
+
+  /* CONFIRMACIÓN */
+  #page-confirm { display: none; padding: 24px 20px; max-width: 480px; margin: 0 auto; text-align: center; }
+  .confirm-card { background: #fff; border: 2px solid #dde3ea; border-radius: 20px; padding: 32px 20px;
+                  box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .confirm-card .conf-q { color: #888; font-size: 0.95rem; margin-bottom: 10px; }
+  .confirm-card .conf-name { font-size: 1.3rem; font-weight: 800; color: #2aabd2; margin-bottom: 8px; }
+  .confirm-card .conf-boletos { color: #888; font-size: 0.85rem; margin-bottom: 28px; }
+  .btn-confirm { background: #2aabd2; color: #fff; font-size: 1rem; font-weight: 800;
+                 padding: 14px 32px; border-radius: 50px; border: none; cursor: pointer;
+                 width: 100%; margin-bottom: 12px; transition: opacity .2s; }
+  .btn-confirm:hover { opacity: 0.88; }
+  .btn-confirm:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+  .conf-loading { color: #888; font-size: 0.9rem; margin: 8px 0; display: none; }
+
+  /* SORTEO */
+  #page-sorteo { display: none; padding: 20px; max-width: 700px; margin: 0 auto; text-align: center; }
+  .sorteo-display { background: #fff; border: 3px solid #2aabd2; border-radius: 24px;
+                    padding: 40px 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(42,171,210,0.12); }
+  .sorteo-numero { font-size: 6rem; font-weight: 900; color: #2aabd2; line-height: 1;
+                   min-height: 110px; display: flex; align-items: center; justify-content: center; }
+  .sorteo-nombre { font-size: 1.6rem; font-weight: 700; color: #111; margin-top: 12px; min-height: 40px; }
+  .sorteo-boletos-restantes { color: #888; font-size: 0.9rem; margin-top: 8px; }
+
+  .sorteo-acciones { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .btn-sortear { background: #2aabd2; color: #fff; font-size: 1.3rem; font-weight: 900;
+                 padding: 18px 48px; border-radius: 50px; border: none; cursor: pointer;
+                 transition: transform .1s; width: 100%; max-width: 340px; }
+  .btn-sortear:active { transform: scale(0.97); }
+  .btn-sortear:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+
+  .btn-guardar { background: #27ae60; color: #fff; font-size: 1rem; font-weight: 800;
+                 padding: 14px 32px; border-radius: 50px; border: none; cursor: pointer;
+                 width: 100%; max-width: 340px; display: none; transition: opacity .2s; }
+  .btn-guardar:hover { opacity: 0.88; }
+  .btn-guardar:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+
+  .save-status { font-size: 0.85rem; color: #888; min-height: 20px; }
+
+  /* HISTORIAL */
+  .historial { margin-top: 16px; text-align: left; }
+  .historial h3 { color: #888; font-size: 0.85rem; margin-bottom: 8px; }
+  .hist-item { background: #fff; border: 1px solid #dde3ea; border-radius: 8px; padding: 10px 14px;
+               margin-bottom: 6px; }
+  .hist-item-header { display: flex; justify-content: space-between; align-items: center; }
+  .hist-num  { color: #2aabd2; font-weight: 700; font-size: 1rem; }
+  .hist-premio { background: #2aabd2; color: #fff; font-size: 0.7rem; font-weight: 800;
+                  padding: 2px 8px; border-radius: 20px; }
+  .hist-nombre { color: #444; font-size: 0.85rem; margin-top: 2px; }
+  .hist-guardado { color: #27ae60; font-size: 0.75rem; }
+  .hist-local    { color: #e67e22; font-size: 0.75rem; }
+
+  .btn-reset { background: transparent; border: 1px solid #ccc; color: #888; padding: 8px 20px;
+               border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 12px; }
+
+  /* ADMIN ASISTENCIA */
+  #page-admin { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
+
+  /* SPINNER */
+  .spinning { animation: numSpin 0.08s steps(1) infinite; }
+  @keyframes numSpin { 0% { opacity:1; } 50% { opacity:0.3; } 100% { opacity:1; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="https://celucentermx.github.io/quinielacc2026/celucenter_logo.png" alt="CeluCenter">
+  <h1>🎟️ Rifa CeluCenter 2026</h1>
+  <p>Junta de Septiembre</p>
+</div>
+
+<!-- PÁGINA REGISTRO -->
+<div id="page-registro">
+  <h2>Busca tu nombre</h2>
+  <input type="text" class="search-box" id="searchInput"
+         placeholder="Escribe tu nombre..." autocomplete="off"
+         oninput="buscar(this.value)">
+  <div class="results" id="results"></div>
+</div>
+
+<!-- PÁGINA CONFIRMACIÓN -->
+<div id="page-confirm">
+  <div class="confirm-card">
+    <div class="conf-q">¿Eres tú?</div>
+    <div class="conf-name" id="conf-name"></div>
+    <div class="conf-boletos" id="conf-boletos"></div>
+    <div class="conf-loading" id="conf-loading">Registrando asistencia…</div>
+    <button class="btn-confirm" id="btn-confirm" onclick="confirmarRegistro()">Sí, soy yo ✓</button>
+    <button class="btn-volver" onclick="volverDesdeConfirm()">← Volver a buscar</button>
+  </div>
+</div>
+
+<!-- PÁGINA TICKET -->
+<div id="page-ticket">
+  <div class="ticket-card">
+    <div id="tc-status"></div>
+    <div class="tc-name" id="tc-name"></div>
+    <div class="tc-sub">Tus boletos para la rifa</div>
+    <div class="boletos-grid" id="tc-boletos"></div>
+    <div style="color:#888;font-size:.8rem;margin-top:12px">¡Guarda una captura de pantalla!</div>
+    <button class="btn-volver" onclick="volverRegistro()" style="margin-top:16px">← Buscar otra persona</button>
+  </div>
+</div>
+
+<!-- PÁGINA ADMIN ASISTENCIA -->
+<div id="page-admin">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div>
+      <div style="color:#2aabd2; font-size:1.3rem; font-weight:800;">Lista de Asistencia</div>
+      <div style="color:#888; font-size:0.85rem;" id="admin-ultima">Cargando...</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:2rem; font-weight:900; color:#2aabd2;" id="admin-count">—</div>
+      <div style="color:#888; font-size:0.8rem;">de 59 registrados</div>
+    </div>
+  </div>
+  <div id="admin-lista" style="display:flex; flex-direction:column; gap:8px;"></div>
+  <div style="margin-top:16px; text-align:center;">
+    <button onclick="cargarAsistencia()" style="background:transparent; border:1px solid #ccc; color:#888; padding:8px 20px; border-radius:20px; cursor:pointer; font-size:0.85rem;">🔄 Actualizar ahora</button>
+  </div>
+</div>
+
+<!-- PÁGINA SORTEO -->
+<div id="page-sorteo">
+  <div class="sorteo-display">
+    <div class="sorteo-numero" id="sort-num">—</div>
+    <div class="sorteo-nombre" id="sort-nombre"></div>
+    <div class="sorteo-boletos-restantes" id="sort-restantes"></div>
+  </div>
+
+  <div class="sorteo-acciones">
+    <button class="btn-sortear" id="btn-sortear" onclick="sortear()">🎯 SORTEAR</button>
+    <button class="btn-guardar" id="btn-guardar" onclick="guardarGanador()">✅ Guardar como Premio #<span id="btn-premio-num">1</span></button>
+    <div class="save-status" id="save-status"></div>
+  </div>
+
+  <div class="historial" id="historial"></div>
+  <button class="btn-reset" onclick="resetSorteo()">Reiniciar sorteo</button>
+</div>
+
+<script>
+// ─── CONFIGURACIÓN ───
+// Para guardar ganadores en Google Sheets, despliega gas_script.gs
+// y reemplaza la URL aquí:
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzYcFsPCqoPYbX_nHRzz9YalH0GfgH_M-uFp6tRzyh97q9kTkbOPiejoSAvzUzj65i2/exec';
+
+// ─── DATOS ───
+const DATOS = {
+  "ALEJANDRO PADILLA FRAUTO": [3,135,156,255,337,376,423,424,446,491,599,618,625,675,788,839,846,904,938,967],
+  "MARLEN FLORES HERNANDEZ": [115,333,378,432,456,479,527,651,719,728],
+  "EVELYN JUDITH ANGEL PEÑA": [4,292,597,861],
+  "FELICIA SANCHEZ PEÑA SANCHEZ": [33,288,581,779],
+  "KARINA BAUTISTA SANCHEZ": [70,175,746,874],
+  "LILIA LIZETH FIGUERA ALVAREZ": [43,224,751,841],
+  "DIANA OROZCO": [99,409,470,954],
+  "LEONARDO DANIEL GUIZAR": [78,211,270,462,552,615,700,800,854,915],
+  "YAMILEE TEJEDA RAMIREZ": [214,278,293,357,381,459,594,889,969,972],
+  "LAURA ELIZABETH ROSA MENDOZA": [85,358,562,939],
+  "ALMA JUDITH PEREZ VALENCIA": [252,453,548,710],
+  "LORENA PATIÑO": [313,557,592,741,824,867],
+  "ARACELIS CASTAÑEDA": [142,496,578,725],
+  "ANGELICA BEATRIZ PRADO": [89,386,450,514,744,761,865,879],
+  "SILVIA LETICIA TORRES NAVARRO": [75,83,666,988],
+  "GONZALO NEGRETE MONTAÑO": [69,264,466,539,598,726],
+  "ISIS PAOLA RIVERA NAVARRO": [107,413,538,790,818,955],
+  "VALERIA DE JESUS INES": [98,607],
+  "PAOLA SANCHEZ": [40,73,194,321,355,356,449,504,883,950],
+  "ANTONIO SANCHEZ": [5,148,168,201,318,457,487,570,844,884],
+  "JACQUELINE MONTSERRAT MENDOZA FERNANDEZ": [66,159,237,327,692,893],
+  "AZUL BISCARRA": [309,351],
+  "DIANA ALONDRA DIAZ": [141,167,436,522,603],
+  "ALMA PAULINA CARRANZA VIZCARRA": [226,444,454,545,910,979],
+  "BRAYAN ALEJANDRO VILLALVAZO FLORES": [2,9,196,517,852,981],
+  "AIMAR KARIME MORENO GOMEZ": [71,81,747,750,996],
+  "RUTH PAOLA MAGALLON": [131,295,301,345,452,536,550,735,862,902],
+  "JENNIFER ESPINOZA": [67,220,298,334,372,426,445,620,808,888],
+  "ELIZABETH GONZALEZ": [1,84,275,294,302,304,441,560,686,863],
+  "JANETH ESPINOZA": [36,64,97,342,388,391,429,508,569,921],
+  "JOSE LUIS CAMPOS": [110,153,162,297,389,397,549,616,868,933],
+  "JANARA MONTSERRAT CHAVEZ VARGAS": [17,65,111,390,402,537,540,715,755,777],
+  "CARMEN MUÑOZ": [51,60,76,184,272,319,416,475,523,588,657,772,956],
+  "PERLA YARENI GALVEZ ALEGRIA": [10,52,88,158,306,387,401,427,433,573,819,894,997],
+  "JUAN CRISTOPHER CEVERO MARTINEZ": [132,215,244,328,338,367,399,408,499,534,622,691,693,705,866,965],
+  "JOSE ZACKARIAS PONCE GARCIA": [47,136,218,308,363,392,610,611,627,680,684,713,743,764,767,892],
+  "YURIDIA QUINTERO BEJARANO": [113,176,246,681,730,908],
+  "MARIA DEL ROSARIO ARELLANO CARDENAS": [53,160,212,415,421,430,465,467,587,600,762,820,975,984],
+  "ELSA ARELLANO CARDENAS": [23,45,74,92,149,276,330,506,617,649,782,802,957,982],
+  "ARLET RAMOS": [451,481,660,697,704,993],
+  "DIANEY ALEJANDRA": [13,261,897,923,958,987],
+  "LUIS FERNANDO HERNANDEZ MONTAÑEZ": [68,102,207,230,316,364,448,529,571,574,605,679,682,708,712,720,742,756,774,776,836,999],
+  "ALEJANDRINA DE ANDA": [46,114,192,249,289,335,336,368,498,503,510,513,554,561,613,793,814,835,937,964,973,991],
+  "MARIA DEL SAGRARIO REYES NEGRETE": [80,179,439,714,994,995],
+  "JESSICA GUADALUPE CASTELLANOS": [173,563,694],
+  "YULIANA DEL ROSARIO MUÑOZ PALOMAR": [170,248,787],
+  "YANELI SOTELO AYAR": [94,280,384,434,729,783,850],
+  "ALFREDO SOTELO AYAR": [55,256,396,674,809,840,961],
+  "JOCELYN GUADALUPE CRUZ ROJAS": [208,919],
+  "NEFTALI ARELLANO": [11,150,186,200,291,565,629,671,673,909],
+  "CRISTIAN BARAJAS": [96,183,225,350,602,709,718,834,929,986],
+  "JUAN JOSE ARELLANO": [42,138,253,283,323,417,437,621,650,795],
+  "LUIS MORENO": [21,56,63,245,512,733,736,877,968,978],
+  "DAVID GARCIA": [210,236,281,395,485,495,585,678,832,885],
+  "HUGO ALCARAZ": [12,50,238,425,568,596,637,640,917,943],
+  "JOSE LUIS HERNANDEZ": [18,31,127,180,185,209,414,502,848,990],
+  "OCTAVIO FABIAN": [341,382,461,533,792,821,864,880,916,931],
+  "ADRIAN HERNANDEZ": [24,109,228,311,349,428,566,582,670,940],
+  "CARLOS BARBOSA": [86,221,314,325,464,492,689,699,801,825,826,936,946],
+  "CLAUDIA MAGAÑA": [32,59,353,757,781,953,998]
+};
+
+// Pool aplanado: {numero: nombre}
+const POOL = {};
+for (const [nombre, nums] of Object.entries(DATOS)) {
+  for (const n of nums) POOL[n] = nombre;
+}
+const TOTAL = Object.keys(POOL).length;
+
+// Estado sorteo
+let sorteados = []; // [{boleto, nombre, premio, guardado}]
+let pendienteGuardar = null; // {boleto, nombre}
+let sorteando = false;
+
+// ─── DETECCIÓN DE MODO ───
+const params = new URLSearchParams(location.search);
+if (params.get('sorteo') === 'sep2026') {
+  document.getElementById('page-registro').style.display = 'none';
+  document.getElementById('page-sorteo').style.display = 'block';
+  initSorteo();
+} else if (params.get('admin') === 'sep2026') {
+  document.getElementById('page-registro').style.display = 'none';
+  document.getElementById('page-admin').style.display = 'block';
+  cargarAsistencia();
+  setInterval(cargarAsistencia, 15000);
+} else {
+  const yaRegistrado = localStorage.getItem('rifasep2026_nombre');
+  if (yaRegistrado && DATOS[yaRegistrado]) mostrarBoletosDirecto(yaRegistrado);
+}
+
+// ─── BÚSQUEDA ───
+let currentResults = [];
+
+function normalizar(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').trim();
+}
+
+function buscar(q) {
+  const res = document.getElementById('results');
+  if (q.trim().length < 2) { res.innerHTML = ''; currentResults = []; return; }
+  const words = normalizar(q).split(' ').filter(Boolean);
+  currentResults = Object.keys(DATOS).filter(n => {
+    const nn = normalizar(n);
+    return words.every(w => nn.includes(w));
+  });
+  const btnNoEstoy = '<div style="margin-top:20px;text-align:center;"><button onclick="noEstoyEnLista()" style="background:transparent;border:1px solid #555;color:#888;padding:10px 24px;border-radius:20px;cursor:pointer;font-size:0.85rem;">No estoy en la lista</button></div>';
+  if (!currentResults.length) {
+    res.innerHTML = '<div class="no-results">No encontrado — intenta con apellido</div>' + btnNoEstoy;
+    return;
+  }
+  res.innerHTML = currentResults.map((n, i) =>
+    `<div class="result-item" onclick="mostrarConfirm(${i})">
+      <div class="rname">${n}</div>
+      <div class="rcount">${DATOS[n].length} boleto${DATOS[n].length > 1 ? 's' : ''}</div>
+    </div>`
+  ).join('') + btnNoEstoy;
+}
+
+function noEstoyEnLista() {
+  document.getElementById('results').innerHTML =
+    '<div style="background:#1a1a1a;border:1px solid #444;border-radius:12px;padding:20px;text-align:center;margin-top:8px;">' +
+    '<div style="font-size:1.1rem;margin-bottom:8px;">⚠️ Avísale al organizador</div>' +
+    '<div style="color:#888;font-size:0.85rem;">Tu nombre no está registrado. Acércate con Cristian para que te agreguen.</div>' +
+    '</div>';
+}
+
+let pendingNombre = '';
+
+function mostrarConfirm(idx) {
+  pendingNombre = currentResults[idx];
+  const nums = DATOS[pendingNombre];
+  document.getElementById('page-registro').style.display = 'none';
+  document.getElementById('conf-name').textContent = pendingNombre;
+  document.getElementById('conf-boletos').textContent = `${nums.length} boleto${nums.length > 1 ? 's' : ''} asignado${nums.length > 1 ? 's' : ''}`;
+  document.getElementById('conf-loading').style.display = 'none';
+  document.getElementById('btn-confirm').disabled = false;
+  document.getElementById('btn-confirm').textContent = 'Sí, soy yo ✓';
+  document.getElementById('page-confirm').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function confirmarRegistro() {
+  const nombre = pendingNombre;
+  const btn = document.getElementById('btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Registrando…';
+  document.getElementById('conf-loading').style.display = 'block';
+
+  const cbName = 'gasReg_' + Date.now();
+  const timeoutId = setTimeout(() => mostrarBoletos(nombre, null), 6000);
+
+  window[cbName] = function(data) {
+    clearTimeout(timeoutId);
+    delete window[cbName];
+    mostrarBoletos(nombre, data);
+  };
+
+  const s = document.createElement('script');
+  s.onerror = () => { clearTimeout(timeoutId); mostrarBoletos(nombre, null); };
+  s.src = GAS_URL + '?action=registrar&nombre=' + encodeURIComponent(nombre) +
+          '&callback=' + cbName +
+          '&device=' + encodeURIComponent(navigator.userAgent.substring(0, 60)) +
+          '&rifa=sep2026';
+  document.head.appendChild(s);
+}
+
+function mostrarBoletos(nombre, gasData) {
+  localStorage.setItem('rifasep2026_nombre', nombre);
+  document.getElementById('page-confirm').style.display = 'none';
+  const ticket = document.getElementById('page-ticket');
+  ticket.style.display = 'block';
+  document.getElementById('tc-name').textContent = nombre;
+  document.getElementById('tc-boletos').innerHTML = DATOS[nombre]
+    .map(n => `<div class="boleto-num">${String(n).padStart(3,'0')}</div>`).join('');
+  let badge = '';
+  if (gasData) {
+    badge = gasData.yaRegistrado
+      ? '<div style="background:#2a2a1a;border:1px solid #7a7a2d;color:#cccc5d;border-radius:8px;padding:8px 14px;font-size:.85rem;margin-bottom:12px">⚠️ Ya estabas registrado anteriormente</div>'
+      : '<div style="background:#1a3a1a;border:1px solid #2d7a2d;color:#5dbb5d;border-radius:8px;padding:8px 14px;font-size:.85rem;margin-bottom:12px">✅ ¡Registro exitoso! Asistencia marcada.</div>';
+  }
+  document.getElementById('tc-status').innerHTML = badge;
+  window.scrollTo(0, 0);
+}
+
+function mostrarBoletosDirecto(nombre) {
+  document.getElementById('page-registro').style.display = 'none';
+  document.getElementById('page-ticket').style.display = 'block';
+  document.getElementById('tc-name').textContent = nombre;
+  document.getElementById('tc-boletos').innerHTML = DATOS[nombre]
+    .map(n => `<div class="boleto-num">${String(n).padStart(3,'0')}</div>`).join('');
+  document.getElementById('tc-status').innerHTML =
+    '<div style="background:#1a2a3a;border:1px solid #2d5a7a;color:#5daacc;border-radius:8px;padding:8px 14px;font-size:.85rem;margin-bottom:12px">👋 ¡Ya estás registrado! Estos son tus boletos.</div>';
+  window.scrollTo(0, 0);
+}
+
+function volverDesdeConfirm() {
+  document.getElementById('page-confirm').style.display = 'none';
+  document.getElementById('page-registro').style.display = 'block';
+}
+
+function volverRegistro() {
+  localStorage.removeItem('rifasep2026_nombre');
+  document.getElementById('page-ticket').style.display = 'none';
+  document.getElementById('page-registro').style.display = 'block';
+}
+
+// ─── ADMIN ASISTENCIA ───
+function cargarAsistencia() {
+  const cbName = 'adminCb_' + Date.now();
+  const timeoutId = setTimeout(() => {
+    delete window[cbName];
+    document.getElementById('admin-ultima').textContent = 'Error al cargar — reintentando...';
+  }, 8000);
+
+  window[cbName] = function(data) {
+    clearTimeout(timeoutId);
+    delete window[cbName];
+    if (data && data.registros) renderAsistencia(data.registros);
+  };
+
+  const s = document.createElement('script');
+  s.src = GAS_URL + '?action=list&rifa=sep2026&callback=' + cbName;
+  s.onerror = () => clearTimeout(timeoutId);
+  document.head.appendChild(s);
+}
+
+function renderAsistencia(registros) {
+  document.getElementById('admin-count').textContent = registros.length;
+  const ahora = new Date().toLocaleTimeString('es-MX', {timeZone:'America/Mexico_City', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('admin-ultima').textContent = 'Actualizado: ' + ahora;
+  const lista = document.getElementById('admin-lista');
+  if (!registros.length) {
+    lista.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">Sin registros aún</div>';
+    return;
+  }
+  lista.innerHTML = registros.map((r, i) => {
+    const d = new Date(r.hora);
+    const hora = isNaN(d) ? r.hora : d.toLocaleTimeString('es-MX', {timeZone:'America/Mexico_City', hour:'2-digit', minute:'2-digit'});
+    return `<div style="background:#fff;border:1px solid #dde3ea;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="color:#2aabd2;font-weight:700;margin-right:8px;">${i+1}.</span>
+        <span style="font-size:0.95rem;">${r.nombre}</span>
+      </div>
+      <div style="color:#888;font-size:0.8rem;">${hora}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── SORTEO ───
+function initSorteo() {
+  const saved = localStorage.getItem('rifasep2026_sorteados');
+  sorteados = saved ? JSON.parse(saved) : [];
+  renderHistorial();
+  actualizarRestantes();
+}
+
+function sortear() {
+  if (sorteando) return;
+
+  // Si hay un ganador pendiente de guardar, no sortear otro
+  if (pendienteGuardar) {
+    document.getElementById('save-status').textContent = '⚠️ Guarda el ganador actual antes de sortear otro';
+    return;
+  }
+
+  const sorteadosNums = sorteados.map(s => s.boleto);
+  const restantes = Object.keys(POOL).map(Number).filter(n => !sorteadosNums.includes(n));
+  if (!restantes.length) return;
+
+  sorteando = true;
+  document.getElementById('btn-sortear').disabled = true;
+  document.getElementById('btn-guardar').style.display = 'none';
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('sort-nombre').textContent = '';
+
+  const ganador = restantes[Math.floor(Math.random() * restantes.length)];
+  const sortNum = document.getElementById('sort-num');
+  let t = 0;
+  const pasos = 28;
+
+  const intervalo = setInterval(() => {
+    const fake = restantes[Math.floor(Math.random() * restantes.length)];
+    sortNum.textContent = String(fake).padStart(3, '0');
+    t++;
+    if (t >= pasos) {
+      clearInterval(intervalo);
+      sortNum.textContent = String(ganador).padStart(3, '0');
+      document.getElementById('sort-nombre').textContent = POOL[ganador];
+      sorteando = false;
+      pendienteGuardar = { boleto: ganador, nombre: POOL[ganador] };
+
+      const premioNum = sorteados.length + 1;
+      document.getElementById('btn-premio-num').textContent = premioNum;
+      document.getElementById('btn-guardar').style.display = 'block';
+      document.getElementById('btn-sortear').disabled = false;
+      actualizarRestantes();
+    }
+  }, 80);
+}
+
+function guardarGanador() {
+  if (!pendienteGuardar) return;
+  const { boleto, nombre } = pendienteGuardar;
+  const premio = sorteados.length + 1;
+
+  const btnG = document.getElementById('btn-guardar');
+  btnG.disabled = true;
+  document.getElementById('save-status').textContent = 'Guardando…';
+
+  // Guardar localmente
+  const entry = { boleto, nombre, premio, guardado: false };
+  sorteados.push(entry);
+  localStorage.setItem('rifasep2026_sorteados', JSON.stringify(sorteados));
+  pendienteGuardar = null;
+
+  // Intentar guardar en Google Sheets
+  const cbName = 'gasSave_' + Date.now();
+  const timeoutId = setTimeout(() => {
+    delete window[cbName];
+    entry.guardado = false;
+    localStorage.setItem('rifasep2026_sorteados', JSON.stringify(sorteados));
+    document.getElementById('save-status').textContent = '⚠️ Sin conexión — guardado solo localmente';
+    btnG.style.display = 'none';
+    renderHistorial();
+    actualizarRestantes();
+  }, 8000);
+
+  window[cbName] = function(data) {
+    clearTimeout(timeoutId);
+    delete window[cbName];
+    entry.guardado = !!(data && data.ok);
+    localStorage.setItem('rifasep2026_sorteados', JSON.stringify(sorteados));
+    document.getElementById('save-status').textContent = entry.guardado
+      ? '✅ Guardado en Google Sheets'
+      : '⚠️ Sin conexión — guardado solo localmente';
+    btnG.style.display = 'none';
+    renderHistorial();
+    actualizarRestantes();
+  };
+
+  const s = document.createElement('script');
+  s.onerror = () => { clearTimeout(timeoutId); window[cbName]({ok: false}); };
+  s.src = GAS_URL + '?action=ganador'
+    + '&boleto=' + boleto
+    + '&nombre=' + encodeURIComponent(nombre)
+    + '&premio=' + premio
+    + '&rifa=sep2026'
+    + '&callback=' + cbName;
+  document.head.appendChild(s);
+}
+
+function actualizarRestantes() {
+  const sorteadosNums = sorteados.map(s => s.boleto);
+  const restantes = TOTAL - sorteadosNums.length;
+  document.getElementById('sort-restantes').textContent =
+    `${restantes} boleto${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''} de ${TOTAL}`;
+  if (restantes === 0) {
+    document.getElementById('btn-sortear').textContent = '✅ Rifa completada';
+    document.getElementById('btn-sortear').disabled = true;
+  } else {
+    document.getElementById('btn-sortear').textContent = '🎯 SORTEAR';
+  }
+}
+
+function renderHistorial() {
+  const hist = document.getElementById('historial');
+  if (!sorteados.length) { hist.innerHTML = ''; return; }
+  const items = [...sorteados].reverse().map(s =>
+    `<div class="hist-item">
+      <div class="hist-item-header">
+        <span class="hist-num">${String(s.boleto).padStart(3,'0')}</span>
+        <span class="hist-premio">Premio #${s.premio}</span>
+      </div>
+      <div class="hist-nombre">${s.nombre}</div>
+      <div>${s.guardado
+        ? '<span class="hist-guardado">✅ Guardado en Sheets</span>'
+        : '<span class="hist-local">💾 Local únicamente</span>'}</div>
+    </div>`
+  ).join('');
+  hist.innerHTML = `<h3>Ganadores (${sorteados.length})</h3>${items}`;
+}
+
+function resetSorteo() {
+  if (!confirm('¿Reiniciar el sorteo? Se borrarán todos los ganadores locales.')) return;
+  sorteados = [];
+  pendienteGuardar = null;
+  localStorage.removeItem('rifasep2026_sorteados');
+  document.getElementById('sort-num').textContent = '—';
+  document.getElementById('sort-nombre').textContent = '';
+  document.getElementById('btn-guardar').style.display = 'none';
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('btn-sortear').disabled = false;
+  document.getElementById('btn-sortear').textContent = '🎯 SORTEAR';
+  renderHistorial();
+  actualizarRestantes();
+}
+</script>
+</body>
+</html>
