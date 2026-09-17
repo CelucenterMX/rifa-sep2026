@@ -1,14 +1,15 @@
 // ============================================================
 //  Calificador de Equipos — CeluCenter
-//  Despliega como Web App > "Anyone" > Execute as "Me"
-//  Copia el URL desplegado en calificador/js/config.js
+//
+//  SETUP (una sola vez):
+//  1. Copia este script en script.google.com (nuevo proyecto)
+//  2. Menú: Ejecutar → initSpreadsheet  (crea el Sheet solo)
+//  3. Despliega como Web App > "Anyone" > Execute as "Me"
+//  4. Copia la URL del deploy en calificador/js/config.js
 // ============================================================
-
-const SPREADSHEET_ID = 'REPLACE_WITH_YOUR_GOOGLE_SHEET_ID';
 
 const CRITERIA_IDS = ['creativity', 'participation', 'editing', 'content', 'presentation'];
 
-// Nombres que aparecerán en la pantalla de resultados
 const JUECES = {
   '1': 'Juez 1',
   '2': 'Juez 2',
@@ -16,7 +17,44 @@ const JUECES = {
   '4': 'Juez 4',
 };
 
-// ── Entry point ──────────────────────────────────────────────────────────────
+// ── Auto-init: crea el Spreadsheet y guarda el ID ─────────────────────────────
+function initSpreadsheet() {
+  const props = PropertiesService.getScriptProperties();
+  let id = props.getProperty('SHEET_ID');
+
+  if (!id) {
+    const ss = SpreadsheetApp.create('Calificador CeluCenter — Sep 2026');
+    id = ss.getId();
+    props.setProperty('SHEET_ID', id);
+
+    // Pre-create the two sheets with headers
+    const eq = ss.getActiveSheet();
+    eq.setName('Equipos');
+    eq.appendRow(['id', 'nombre', 'producto', 'ts']);
+
+    const sc = ss.insertSheet('Calificaciones');
+    sc.appendRow(['juez', 'equipo_id', ...CRITERIA_IDS, 'ts']);
+
+    Logger.log('✅ Sheet creado exitosamente');
+    Logger.log('📋 URL: ' + ss.getUrl());
+    Logger.log('🔑 ID: ' + id);
+  } else {
+    const ss = SpreadsheetApp.openById(id);
+    Logger.log('ℹ️ Sheet ya existe: ' + ss.getUrl());
+  }
+
+  return id;
+}
+
+// ── Open spreadsheet (auto-creates if missing) ────────────────────────────────
+function openSS() {
+  const props = PropertiesService.getScriptProperties();
+  const id    = props.getProperty('SHEET_ID');
+  if (!id) throw new Error('Sheet no inicializado — ejecuta initSpreadsheet() primero');
+  return SpreadsheetApp.openById(id);
+}
+
+// ── Entry point ───────────────────────────────────────────────────────────────
 function doGet(e) {
   const p  = e.parameter;
   const cb = p.callback;
@@ -48,11 +86,7 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function openSS() {
-  return SpreadsheetApp.openById(SPREADSHEET_ID);
-}
-
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function ensureSheet(name, headers) {
   const ss    = openSS();
   let   sheet = ss.getSheetByName(name);
@@ -136,13 +170,12 @@ function getMyScores(juez) {
   return { scores };
 }
 
-// ── Resultados (promedio de todos los jueces) ─────────────────────────────────
+// ── Resultados ────────────────────────────────────────────────────────────────
 function getResultados() {
   const { equipos } = getEquipos();
   const sheet = ensureSheet('Calificaciones', ['juez', 'equipo_id', ...CRITERIA_IDS, 'ts']);
   const rows  = sheet.getDataRange().getValues().slice(1);
 
-  // equipo_id → juezId → { criterion: score }
   const map = {};
   for (const row of rows) {
     const [juez, equipo_id, ...rest] = row;
@@ -183,7 +216,7 @@ function getResultados() {
   return {
     results,
     jueces:    JUECES,
-    max_score: CRITERIA_IDS.length * 5,   // 25
+    max_score: CRITERIA_IDS.length * 5,
     ts:        new Date().toISOString(),
   };
 }
