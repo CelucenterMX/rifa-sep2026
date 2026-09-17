@@ -3,7 +3,7 @@
 // 2. Despliega como Web App (acceso: Anyone)
 // 3. Copia la URL y pégala aquí abajo
 
-export const GAS_URL = 'https://script.google.com/macros/s/REPLACE_WITH_YOUR_DEPLOYMENT_URL/exec';
+export const GAS_URL = 'https://script.google.com/macros/s/AKfycbxr_BrZlJhnxgvZmFt3F9GgIXqkhQ6pNx3CkvspRYpBLTe0W-HSIqBxl0mHFqM-7__L/exec';
 
 // Nombres de los jueces (aparecen en la pantalla de resultados y en la app)
 export const JUECES = [
