@@ -1,0 +1,130 @@
+name: Rifa Bot — Monitor Tarea
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verificar horario (solo 16-Sep hasta 10pm México)
+        id: horario
+        run: |
+          HOUR=$(TZ='America/Mexico_City' date +%H)
+          DATE=$(TZ='America/Mexico_City' date +%Y-%m-%d)
+          echo "hora=$HOUR | fecha=$DATE"
+          if [ "$DATE" = "2026-09-16" ] && [ "$HOUR" -lt 22 ]; then
+            echo "activo=true" >> $GITHUB_OUTPUT
+          else
+            echo "activo=false" >> $GITHUB_OUTPUT
+            echo "Fuera de horario, no se ejecuta."
+          fi
+
+      - name: Monitorear comentarios y enviar DMs
+        if: steps.horario.outputs.activo == 'true'
+        env:
+          BITRIX_WEBHOOK: ${{ secrets.BITRIX_WEBHOOK }}
+          KREIS_WEBHOOK: ${{ secrets.KREIS_WEBHOOK }}
+        run: |
+          python3 - << 'EOF'
+          import os, json, urllib.request, urllib.parse
+          from datetime import datetime, timezone, timedelta
+
+          BITRIX  = os.environ['BITRIX_WEBHOOK'].rstrip('/')
+          KREIS   = os.environ.get('KREIS_WEBHOOK', os.environ['BITRIX_WEBHOOK']).rstrip('/')
+          TASK_ID = 205289
+          RIFA_LINK = 'https://celucentermx.github.io/rifa-sep2026/'
+
+          # Palabras clave — masculino y femenino
+          KEYWORDS = [
+            'enterado', 'enterada',
+            'listo', 'lista',
+            'boleto', 'boleta',
+            'salir', 'sale',
+            'no tengo boletos', 'no tengo boleto',
+          ]
+
+          def api(webhook, method, params=None, post=False):
+            url = f"{webhook}/{method}"
+            if params and not post:
+              url += '?' + urllib.parse.urlencode(params, doseq=True)
+            data = urllib.parse.urlencode(params or {}, doseq=True).encode() if post else None
+            req = urllib.request.Request(url, data=data)
+            with urllib.request.urlopen(req, timeout=15) as r:
+              return json.loads(r.read())
+
+          # Obtener comentarios de la tarea
+          result   = api(BITRIX, 'tasks.task.commentItem.getList', {'TASK_ID': TASK_ID})
+          comments = result.get('result', [])
+          print(f"Total comentarios en tarea: {len(comments)}")
+
+          # Solo los últimos 15 minutos
+          now    = datetime.now(timezone.utc)
+          cutoff = now - timedelta(minutes=15)
+
+          for comment in comments:
+            date_str  = comment.get('POST_DATE', '')
+            author_id = str(comment.get('AUTHOR_ID', ''))
+            text      = comment.get('POST_MESSAGE', '').strip().lower()
+
+            # Filtrar por tiempo
+            try:
+              cdate = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+              if cdate < cutoff:
+                continue
+            except:
+              continue
+
+            if not author_id or author_id == '0':
+              continue
+
+            # Verificar keyword
+            if not any(kw in text for kw in KEYWORDS):
+              continue
+
+            print(f"✅ Keyword detectada: '{text}' — usuario {author_id}")
+
+            # Nombre del usuario
+            try:
+              udata  = api(BITRIX, 'user.get', {'ID': author_id})
+              users  = udata.get('result', [])
+              nombre = users[0].get('NAME', 'Gerente') if users else 'Gerente'
+            except:
+              nombre = 'Gerente'
+
+            # Remover de la tarea (ACCOMPLICES)
+            try:
+              tdata      = api(BITRIX, 'tasks.task.get', {'taskId': TASK_ID, 'select[]': 'ACCOMPLICES'})
+              accomplices = tdata.get('result', {}).get('task', {}).get('accomplices', [])
+              new_acc    = [str(u) for u in accomplices if str(u) != author_id]
+              params     = {'taskId': TASK_ID}
+              for i, uid in enumerate(new_acc):
+                params[f'fields[ACCOMPLICES][{i}]'] = uid
+              if not new_acc:
+                params['fields[ACCOMPLICES][]'] = ''
+              api(BITRIX, 'tasks.task.update', params, post=True)
+              print(f"🗑️  {nombre} removido/a de la tarea")
+            except Exception as e:
+              print(f"⚠️  Error removiendo de tarea: {e}")
+
+            # DM desde Kreis Bot
+            try:
+              msg = (
+                f"¡Hola {nombre}! 🎟️\n\n"
+                f"Gracias por confirmar. Aquí está el link de registro de la rifa de septiembre:\n\n"
+                f"👉 {RIFA_LINK}\n\n"
+                f"Entra y busca TU nombre para ver los números de boleto que te tocaron. "
+                f"Comparte este link con tus compañeros y apoyos de tienda para que también puedan ver sus boletos.\n\n"
+                f"⚠️ Cada quien debe buscar su propio nombre — si por error eligieron el nombre de otra persona, avísanos y lo corregimos.\n\n"
+                f"¡Mucha suerte en el sorteo! 🎉"
+              )
+              api(KREIS, 'im.message.add', {'DIALOG_ID': author_id, 'MESSAGE': msg}, post=True)
+              print(f"📨 DM enviado a {nombre} (ID {author_id})")
+            except Exception as e:
+              print(f"⚠️  Error enviando DM: {e}")
+
+          print("✔️  Ciclo completo")
+          EOF
