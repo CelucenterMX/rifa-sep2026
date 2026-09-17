@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calificador de Videos — CeluCenter</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header__inner">
+      <div class="header__brand">
+        <span class="header__logo">📱</span>
+        <div>
+          <h1 class="header__title">Calificador de Videos</h1>
+          <p class="header__sub">Dinámica de equipos — CeluCenter</p>
+        </div>
+      </div>
+      <button class="btn btn--ghost" id="btn-reset-all">🗑️ Reiniciar</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- ── Equipos ───────────────────────────────────────────────────── -->
+    <section class="card">
+      <div class="card__hd">
+        <h2 class="card__title">🎯 Equipos</h2>
+        <button class="btn btn--primary" id="btn-add-team">+ Agregar equipo</button>
+      </div>
+
+      <form class="add-form" id="add-team-form" hidden>
+        <div class="add-form__field">
+          <label for="team-name-input">Nombre del equipo</label>
+          <input type="text" class="input" id="team-name-input"
+                 placeholder="Ej. Los Cargadores" maxlength="40" required />
+        </div>
+        <div class="add-form__field">
+          <label for="product-input">Producto a promocionar</label>
+          <input type="text" class="input" id="product-input"
+                 placeholder="Ej. Audífonos Bluetooth" maxlength="50" required />
+        </div>
+        <div class="add-form__btns">
+          <button type="submit" class="btn btn--primary">Agregar</button>
+          <button type="button" class="btn btn--ghost-dk" id="btn-cancel-add">Cancelar</button>
+        </div>
+      </form>
+
+      <ul class="team-list" id="team-list" role="list" aria-label="Lista de equipos"></ul>
+      <p class="empty" id="empty-state" hidden>
+        Sin equipos aún.<br/>Agrega el primero para comenzar.
+      </p>
+    </section>
+
+    <!-- ── Clasificación ─────────────────────────────────────────────── -->
+    <section class="card">
+      <div class="card__hd">
+        <h2 class="card__title">🏆 Clasificación</h2>
+      </div>
+      <div id="leaderboard" role="list"></div>
+      <p class="empty" id="lb-empty">Los equipos calificados aparecerán aquí.</p>
+    </section>
+
+  </div><!-- /wrap -->
+
+  <!-- ── Scoring dialog ────────────────────────────────────────────── -->
+  <dialog id="scoring-dialog" aria-modal="true" aria-labelledby="dialog-team-name">
+    <div class="dlg__hd">
+      <div>
+        <p class="dlg__team"    id="dialog-team-name"></p>
+        <p class="dlg__product" id="dialog-product"></p>
+      </div>
+      <button class="dlg__close" id="btn-close-dialog" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="dlg__body" id="criteria-list">
+      <!-- rendered by ui.js -->
+    </div>
+
+    <div class="dlg__footer">
+      <div class="dlg__total-row">
+        <span class="dlg__total-lbl">Puntuación total</span>
+        <span class="dlg__total-val" id="total-score-value">0 / 25</span>
+      </div>
+      <div class="dlg__pct-wrap">
+        <div class="dlg__pct-bar" id="pct-bar"></div>
+      </div>
+      <div class="dlg__actions">
+        <button class="btn btn--dng-ghost" id="btn-reset-scores">↺ Limpiar</button>
+        <button class="btn btn--success"   id="btn-save" disabled>✓ Guardar calificación</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
