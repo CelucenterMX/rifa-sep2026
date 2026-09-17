@@ -16,7 +16,11 @@ jobs:
           HOUR=$(TZ='America/Mexico_City' date +%H)
           DATE=$(TZ='America/Mexico_City' date +%Y-%m-%d)
           echo "hora=$HOUR | fecha=$DATE"
-          if [ "$DATE" = "2026-09-16" ] && [ "$HOUR" -lt 22 ]; then
+          # Siempre activo si es manual (workflow_dispatch), horario solo para cron
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "activo=true" >> $GITHUB_OUTPUT
+            echo "Ejecución manual — sin límite de horario"
+          elif [ "$DATE" = "2026-09-16" ] && [ "$HOUR" -lt 22 ]; then
             echo "activo=true" >> $GITHUB_OUTPUT
           else
             echo "activo=false" >> $GITHUB_OUTPUT
