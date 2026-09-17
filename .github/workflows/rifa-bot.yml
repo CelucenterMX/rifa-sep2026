@@ -57,7 +57,7 @@ jobs:
               return json.loads(r.read())
 
           # Obtener comentarios de la tarea
-          result   = api(BITRIX, 'tasks.task.commentItem.getList', {'TASK_ID': TASK_ID})
+          result   = api(BITRIX, 'task.commentitem.getlist', {'TASK_ID': TASK_ID})
           comments = result.get('result', [])
           print(f"Total comentarios en tarea: {len(comments)}")
 
@@ -97,7 +97,7 @@ jobs:
 
             # Remover de la tarea (ACCOMPLICES)
             try:
-              tdata      = api(BITRIX, 'tasks.task.get', {'taskId': TASK_ID, 'select[]': 'ACCOMPLICES'})
+              tdata      = api(BITRIX, 'tasks.task.get', {'taskId': TASK_ID})
               accomplices = tdata.get('result', {}).get('task', {}).get('accomplices', [])
               new_acc    = [str(u) for u in accomplices if str(u) != author_id]
               params     = {'taskId': TASK_ID}
