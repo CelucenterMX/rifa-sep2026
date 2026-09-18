@@ -4,16 +4,21 @@ import { GAS_URL } from './config.js';
  * Calls the GAS backend via JSONP.
  * Returns a Promise that resolves with the response data.
  */
-export function gasCall(params, timeoutMs = 9000) {
+export function gasCall(params, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
     const cbName = `_gas_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const tid    = setTimeout(() => {
-      delete window[cbName];
+    let settled  = false;
+
+    const tid = setTimeout(() => {
+      settled = true;
       reject(new Error('timeout'));
+      // No borrar window[cbName] — si GAS llega tarde que sea no-op, no error
     }, timeoutMs);
 
     window[cbName] = data => {
+      if (settled) { delete window[cbName]; return; } // llegó tarde, ignorar
       clearTimeout(tid);
+      settled = true;
       delete window[cbName];
       resolve(data);
     };
